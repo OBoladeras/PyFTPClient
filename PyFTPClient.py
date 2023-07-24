@@ -5,7 +5,7 @@ import getpass
 import readline
 
 
-version = "1.0.0"
+version = "1.1"
 url = "https://github.com/OBoladeras"
 
 RESET = '\x1b[0m'
@@ -22,7 +22,8 @@ RESET_BOLD = '\x1b[22m'
 
 
 ftp = None
-username = ""
+ftpUsername = ""
+localDir = False
 cwd = os.getcwd()
 command_history = []
 commands = ['ls', 'cd', 'pwd', 'get', 'put', 'rm', 'mkdir',
@@ -30,6 +31,7 @@ commands = ['ls', 'cd', 'pwd', 'get', 'put', 'rm', 'mkdir',
 
 
 def create_ftp_connection():
+    global ftp
     ftp = ftplib.FTP()
 
     try:
@@ -57,11 +59,12 @@ def create_ftp_connection():
 
     while True:
         try:
-            ftp_username = input(f'\nEnter FTP username: ')
+            global ftpUsername
+            ftpUsername = input(f'\nEnter FTP username: ')
             ftp_password = getpass.getpass(prompt=f'Enter FTP password: ')
 
-            ftp.login(ftp_username, ftp_password)
-            print(f'\n{GREEN}Logged in as {ftp_username}{RESET}')
+            ftp.login(ftpUsername, ftp_password)
+            print(f'\n{GREEN}Logged in as {ftpUsername}{RESET}')
             break
 
         except ftplib.error_perm as e:
@@ -74,15 +77,12 @@ def create_ftp_connection():
         except Exception as e:
             print(f"{RED}Error: {RESET}{e}")
 
-    global username
-    username = ftp_username
 
-    return ftp, ftp_username, host
+    return host
 
 
 def main():
-    global ftp
-    ftp, username, IP = create_ftp_connection()
+    IP = create_ftp_connection()
 
     readline.set_completer(completer)
     readline.parse_and_bind('tab: complete')
@@ -90,14 +90,21 @@ def main():
 
     while True:
         try:
+            if localDir:
+                directory = cwd
+                directory = directory.replace(f'/home/{os.environ.get("USER")}', '~')
+            else:
+                directory = ftp.pwd()
+                directory = directory.replace(f'/home/{ftpUsername}', '~')
             request = input(
-                f'{GREEN}({BOLD}{MAGENTA}{username}@{IP}{GREEN}{RESET_BOLD})-[{BOLD}{WHITE}{cwd}{GREEN}{RESET_BOLD}]: {RESET}')
+                f'{GREEN}({BOLD}{MAGENTA}{ftpUsername}@{IP}{GREEN}{RESET_BOLD})-[{WHITE}{directory}{GREEN}]: {RESET}')
 
-            if request == 'exit':
+            if request in ['exit', 'quit', 'close']:
                 ftp.quit()
                 break
             else:
-                command_history.append(request)
+                if request is not None:
+                    command_history.append(request)
                 request = request.split()
                 handle_request(ftp, request)
 
@@ -107,12 +114,12 @@ def main():
         except ftplib.error_temp:
             print(f"{YELLOW}Timeout, login again{RESET}")
             ftp.quit()
-            ftp, username, IP = create_ftp_connection()
+            IP = create_ftp_connection()
 
         except ftplib.error_proto as e:
             print(f"{RED}Broken Pipe Error: {RESET}\nTry logging in again")
             ftp.quit()
-            ftp, username, IP = create_ftp_connection()
+            IP = create_ftp_connection()
 
         except KeyboardInterrupt:
             print(f'\n{RED}KeyboardInterrupt{RESET}')
@@ -207,7 +214,7 @@ def handle_request(ftp, request):
                 print('')
 
         elif request[0] == 'whoami':
-            print(f"You logged in as {GREEN}{username}{RESET}")
+            print(f"You logged in as {GREEN}{ftpUsername}{RESET}")
 
         elif request[0] == 'help':
             print_help()
@@ -403,50 +410,34 @@ def open_file_from_ftp(ftp, remote_file_path):
 
 
 def print_help():
-    print(f"FTP client {version} ( {url} )")
+    print(f"{BOLD}PyFTPClient {RESET}{version} ( {url} )")
 
     print(f"\nCREATE CONNECTION:")
-    print(
-        f"   {GREEN}python3 {RESET}{__file__.split('/')[-1]} [{MAGENTA}@IP{RESET}] [{MAGENTA}port{RESET}]: Connect to the remote FTP server.")
-    print(
-        f"\t - If port is not specified, the default {MAGENTA}port 21{RESET} is used.")
+    print(f"   {GREEN}python3 {RESET}{__file__.split('/')[-1]} [{MAGENTA}@IP{RESET}] [{MAGENTA}port{RESET}]: Connect to the remote FTP server.")
+    print(f"\t - If port is not specified, the default {MAGENTA}port 21{RESET} is used.")
 
     print(f"\nLOCAL SHELL:")
-    print(
-        f"   {GREEN}local{RESET} [{GREEN}command{RESET}]: Run a local shell command and print the output.")
-    print(
-        f"   {GREEN}local cd {RESET}[{CYAN}directory{RESET}]: Change the current local directory.")
+    print(f"   {GREEN}local{RESET} [{GREEN}command{RESET}]: Run a local shell command and print the output.")
+    print(f"   {GREEN}local cd {RESET}[{CYAN}directory{RESET}]: Change the current local directory.")
 
     print("\nFTP COMMANDS:")
-    print(
-        f"   {GREEN}ls {RESET}[{GREEN}-l{RESET}] [{GREEN}-d{RESET}] [{GREEN}-f{RESET}]: List files and directories in the remote FTP server.")
-    print(
-        f"\t- The combination of options is possible like [{GREEN}-lf{RESET}].")
+    print(f"   {GREEN}ls {RESET}[{GREEN}-l{RESET}] [{GREEN}-d{RESET}] [{GREEN}-f{RESET}]: List files and directories in the remote FTP server.")
+    print(f"\t- The combination of options is possible like [{GREEN}-lf{RESET}].")
     print(f"{GREEN}\t-l{RESET}: Long format listing.")
     print(f"{GREEN}\t-d{RESET}: Show only directories.")
     print(f"{GREEN}\t-f{RESET}: Show only files.")
-    print(
-        f"   {GREEN}cd {RESET}[{CYAN}directory{RESET}]: Change the current remote FTP directory.")
+    print(f"   {GREEN}cd {RESET}[{CYAN}directory{RESET}]: Change the current remote FTP directory.")
     print(f"   {GREEN}pwd{RESET}: Print the current remote FTP directory.")
-    print(
-        f"   {GREEN}get {RESET}[{CYAN}remote_file{RESET}] {RESET}[{CYAN}local_file{RESET}]: Download a file from the remote FTP server to the local machine.")
-    print(
-        f"\t- If {RESET}[{CYAN}local_file{RESET}] is not specified, the file will be downloaded to the current local directory.")
-    print(
-        f"   {GREEN}put {RESET}[{CYAN}local_file{RESET}] {RESET}[{CYAN}remote_directory{RESET}]: Upload a local file to the remote FTP server.")
-    print(
-        f"\t- The file will be uploaded to the specified {RESET}[{CYAN}remote_directory{RESET}].")
-    print(
-        f"   {GREEN}rm {RESET}[{CYAN}file_path{RESET}]: Remove a file from the remote FTP server.")
-    print(
-        f"   {GREEN}mkdir {RESET}[{CYAN}directory{RESET}]: Create a directory on the remote FTP server.")
-    print(
-        f"   {GREEN}rmdir {RESET}[{CYAN}directory{RESET}]: Remove a directory from the remote FTP server.")
-    print(
-        f"   {GREEN}open {RESET}[{CYAN}remote_file{RESET}]: Open and display the contents of a remote file.")
+    print(f"   {GREEN}get {RESET}[{CYAN}remote_file{RESET}] {RESET}[{CYAN}local_file{RESET}]: Download a file from the remote FTP server to the local machine.")
+    print(f"\t- If {RESET}[{CYAN}local_file{RESET}] is not specified, the file will be downloaded to the current local directory.")
+    print(f"   {GREEN}put {RESET}[{CYAN}local_file{RESET}] {RESET}[{CYAN}remote_directory{RESET}]: Upload a local file to the remote FTP server.")
+    print(f"\t- The file will be uploaded to the specified {RESET}[{CYAN}remote_directory{RESET}].")
+    print(f"   {GREEN}rm {RESET}[{CYAN}file_path{RESET}]: Remove a file from the remote FTP server.")
+    print(f"   {GREEN}mkdir {RESET}[{CYAN}directory{RESET}]: Create a directory on the remote FTP server.")
+    print(f"   {GREEN}rmdir {RESET}[{CYAN}directory{RESET}]: Remove a directory from the remote FTP server.")
+    print(f"   {GREEN}open {RESET}[{CYAN}remote_file{RESET}]: Open and display the contents of a remote file.")
     print(f"   {GREEN}history{RESET}: Display the command history.")
-    print(
-        f"   {GREEN}whoami{RESET}: Print the username of the currently logged in user.")
+    print(f"   {GREEN}whoami{RESET}: Print the username of the currently logged in user.")
     print(f"   {GREEN}help{RESET}: Print this help message.")
 
 
