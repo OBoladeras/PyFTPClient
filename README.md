@@ -5,7 +5,7 @@ This Python script provides a simple FTP client that allows you to connect to a 
 
 To run the FTP client, execute the script using Python with the following command:
 ```
-python3 ftp.py [IP] [port]
+python3 PyFTPClient.py [IP] [port]
 ```
 - **IP**: The IP address of the remote FTP server.
 - **port**: (Optional) The port number to connect to the FTP server. The default port is 21.
