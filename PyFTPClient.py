@@ -1,11 +1,11 @@
 import os
 import sys
+import time
 import ftplib
 import getpass
 import readline
 
-
-version = "1.2"
+version = "1.3"
 url = "https://github.com/OBoladeras"
 
 RESET = '\x1b[0m'
@@ -122,7 +122,7 @@ def main():
             IP = create_ftp_connection()
 
         except KeyboardInterrupt:
-            print(f'\n{RED}KeyboardInterrupt{RESET}')
+            print(f'\n\n{RED}KeyboardInterrupt{RESET}')
             print(f"See you next time!")
             ftp.quit()
             exit()
@@ -161,12 +161,12 @@ def handle_request(ftp, request):
 
         elif request[0] == 'get':
             if len(request) == 3:
-                get_file_from_ftp(ftp, request[1], request[2])
+                get_file_from_ftp(request[1], request[2])
             if len(request) == 2:
-                get_file_from_ftp(ftp, request[1], cwd)
+                get_file_from_ftp(request[1], cwd)
 
         elif request[0] == 'put':
-            upload_file_to_ftp(ftp, request)
+            upload_file_to_ftp(request)
 
         elif request[0] == 'rm':
             if len(request) >= 2:
@@ -364,17 +364,65 @@ def get_remote_item_list_ftp(request):
     return listing
 
 
-def get_file_from_ftp(ftp, remote_file_path, local_file_path):
+def get_file_from_ftp(remote_file_path, local_file_path):
     try:
+        total_size = ftp.size(remote_file_path)
+        downloaded_size = 0
+
         if os.path.isdir(local_file_path):
             local_file_path = os.path.join(local_file_path, remote_file_path)
 
-        with open(local_file_path, 'wb') as local_file:
-            ftp.retrbinary(f"RETR {remote_file_path}", local_file.write)
-        print(f"File '{remote_file_path}' downloaded to '{local_file_path}'")
+        start_time = time.time()
 
-    except TypeError:
-        print("asbdnskandsak")
+
+        with open(local_file_path, 'wb') as local_file:
+
+            def callback(data):
+                nonlocal downloaded_size
+                downloaded_size += len(data)
+                local_file.write(data)
+                print_progress(downloaded_size)
+
+            def print_progress(progress):
+                percentage = round((progress / total_size) * 100, 2)
+
+                total_mb = total_size / 1048576
+
+                elapsed_time = time.time() - start_time
+                download_speed = progress / elapsed_time / 1048576
+
+                progress_bar_filled = '=' * int(percentage / 2)
+                progress_bar_remaining = '-' * (50 - int(percentage / 2))
+
+                text = f"[{GREEN}{progress_bar_filled}{RESET}{progress_bar_remaining}] {percentage:.2f}%  of {total_mb:.2f} MB  [{download_speed:.2f} MB/s]"
+                if percentage == total_mb:
+                    print('\r' + ' ' * len(text) + '\r', end='', flush=True)
+                    print(text, flush=True)
+                else:
+                    print('\r' + ' ' * len(text) + '\r', end='', flush=True)
+                    print(text, end='', flush=True)
+
+            ftp.retrbinary(f"RETR {remote_file_path}", callback)
+            print("")
+
+        download_time = time.time() - start_time
+
+        if download_time < 60:
+            print(f"File '{CYAN}{remote_file_path}{RESET}' downloaded to '{CYAN}{local_file_path}{RESET}' in {download_time:.2f} seconds")
+        else:
+            download_time = format_time(download_time)
+            print(f"File '{CYAN}{remote_file_path}{RESET}' downloaded to '{CYAN}{local_file_path}{RESET}' in {download_time}")
+
+    except KeyboardInterrupt:
+        print(f"{CYAN}Download interrupted by user.{RESET}")
+        exit()
+        # Handle this exception
+        if input(f"\n{YELLOW} !!! Are you sure you want to exit?  !!! {RESET}(y/n) ") == 'y':
+            print("Download interrupted by user.")
+            os.remove(local_file_path)
+        else:
+            print("Retrying...")
+            get_file_from_ftp(remote_file_path, local_file_path)
 
     except FileNotFoundError:
         print(
@@ -384,7 +432,7 @@ def get_file_from_ftp(ftp, remote_file_path, local_file_path):
         print(f"{RED}Error during download: {RESET}{e}")
 
 
-def upload_file_to_ftp(ftp, request):
+def upload_file_to_ftp(request):
     cwd = ftp.pwd()
 
     try:
@@ -394,11 +442,53 @@ def upload_file_to_ftp(ftp, request):
         print(f"{RED}Error: {RESET}{e}")
 
     try:
+        globalProgress = 0
         local_file_path = request[1]
-        with open(local_file_path, 'rb') as local_file:
-            ftp.storbinary(f"STOR {local_file_path}", local_file)
-        print(
-            f"File '{CYAN}{local_file_path}{RESET}' uploaded to '{CYAN}{ftp.pwd()}{RESET}'")
+        total_size = os.path.getsize(local_file_path)
+
+        start_time = time.time()
+
+        def progress_callback(data):
+            nonlocal globalProgress
+            globalProgress += len(data)
+            percentage = round((globalProgress / total_size) * 100, 2)
+
+            elapsed_time = time.time() - start_time
+            upload_speed = globalProgress / elapsed_time / 1048576
+
+            total_mb = total_size / 1048576
+            progress_bar_filled = '=' * int(percentage / 2)
+            progress_bar_remaining = '-' * (50 - int(percentage / 2))
+
+            text = f"[{GREEN}{progress_bar_filled}{RESET}{progress_bar_remaining}] {percentage:.2f}%  of {total_mb:.2f} MB  [{upload_speed:.2f} MB/s]"
+            if globalProgress == total_size:
+                print('\r' + ' ' * len(text) + '\r', end='', flush=True)
+                print(text, flush=True)
+            else:
+                print('\r' + ' ' * len(text) + '\r', end='', flush=True)
+                print(text, end='', flush=True)
+
+        with open(local_file_path, 'rb') as local_file: # 8192
+            ftp.storbinary(f"STOR {os.path.basename(local_file_path)}", local_file, blocksize=8192, callback=progress_callback)
+    
+        upload_time = time.time() - start_time
+
+        if upload_time < 60:
+            print(f"File '{CYAN}{local_file_path}{RESET}' uploaded to '{CYAN}{ftp.pwd()}{RESET}' in {upload_time:.2f} seconds")
+        else:
+            upload_time = format_time(upload_time)
+            print(f"File '{CYAN}{local_file_path}{RESET}' uploaded to '{CYAN}{ftp.pwd()}{RESET}' in {upload_time}")
+
+    except KeyboardInterrupt:
+        print(f"{CYAN}Download interrupted by user.{RESET}")
+        exit()
+        # Handle this exception
+        if input(f"\n{YELLOW} !!! Are you sure you want to exit? !!! {RESET}(y/n) ") == 'y':
+            print("Download interrupted by user.")
+            ftp.delete(local_file_path)
+        else:
+            print("Retrying...")
+            upload_file_to_ftp(request)
 
     except FileNotFoundError:
         print(f"Error: Local file '{local_file_path}' not found.")
@@ -474,5 +564,11 @@ def run_command(command):
         return None
 
 
+def format_time(seconds):
+    hours = seconds // 3600
+    minutes = (seconds % 3600) // 60
+    return f"{hours:.0f} hours and {minutes:.0f} minutes" if hours > 0 else f"{minutes:.0f} minutes"
+
+
 if __name__ == '__main__':
-    ftp = main()
+    main()
