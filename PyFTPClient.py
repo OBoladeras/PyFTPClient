@@ -27,7 +27,7 @@ localDir = False
 ftpUsername = ""
 cwd = os.getcwd()
 command_history = []
-commands = ['ls', 'cd', 'pwd', 'get', 'put', 'rm', 'mkdir', 'rmdir', 'passive', 'chmod', 'rename', 'size',
+commands = ['ls', 'cd', 'pwd', 'get', 'put', 'rm', 'mkdir', 'rmdir', 'passive', 'chmod', 'rename', 'size', 'status',
             'open', 'history', 'local', 'whoami', 'source', 'help']
 
 
@@ -305,6 +305,23 @@ def handle_request(ftp, request):
             else:
                 print(f"{YELLOW}WARNING{RESET} Need 2 arguments, got {len(request)}{RESET}")
 
+        elif request[0] == 'status':
+            try:
+                status = ftp.sendcmd("STAT")
+                status = status.split("\n")
+
+                text = ""
+                i = 0
+
+                print(f"FTP Server status: {text}")
+                for line in status:
+                    if i != 0 and i != len(status) - 1:
+                        print(line)
+                    i += 1
+
+            except Exception as e:
+                print(f"{RED}Error: {RESET}{e}")
+        
         else:
             print(f"{YELLOW}Unknown command {RESET}'{GREEN}{request[0]}{RESET}'")
             print(f"{YELLOW}Try 'help{RESET}' more information")
@@ -622,6 +639,7 @@ def print_help():
     print(f"\t- Option is the permission level: ({GREEN}+x{RESET}) or ({GREEN}700{RESET}).")
     print(f"   {GREEN}rename{RESET} [{CYAN}remote_file{RESET}] [{CYAN}new_name{RESET}]: Rename a file.")
     print(f"   {GREEN}size{RESET} [{CYAN}remote_file{RESET}]: Print the size of a file.")
+    print(f"   {GREEN}status{RESET}: See the status of the remote FTP server.")
     print(f"   {GREEN}exit{RESET}: Exit the local shell.")
     print(f"   {GREEN}help{RESET}: Print this help message.")
 

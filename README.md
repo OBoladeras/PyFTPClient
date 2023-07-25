@@ -1,4 +1,4 @@
- <h1 align=center>PyFTPClient 🚀</h1>
+<h1 align=center>PyFTPClient 🚀</h1>
 This Python script provides a simple FTP client that allows you to connect to a remote FTP server, perform various file and directory operations, and run local shell commands. The client provides a command-line interface and supports a range of FTP commands for interacting with the remote server.
 
 ## Usage 👨‍💻
@@ -12,10 +12,10 @@ python3 PyFTPClient.py [IP] [port]
 
 ## Supported Commands ✅
 ### FTP Commands:
-- **ls [-l] [-d] [-f]**: List files and directories in the remote FTP server.
-        -l: Long format listing.
-        -d: Show only directories.
-        -f: Show only files.
+- **ls [-l] [-d] [-f]**: List files and directories in the remote FTP server.  
+        -l: Long format listing.  
+        -d: Show only directories.  
+        -f: Show only files.  
         The combination of options is possible, e.g., -lf or -dl.
 - **cd [directory]**: Change the current remote FTP directory.
 - **pwd**: Print the current remote FTP directory.
@@ -36,6 +36,7 @@ python3 PyFTPClient.py [IP] [port]
 - **chmod [permission] [remote_file]**: Change the permissions of the remote file.
 - **rename [remote_file] [new_name]**: Set a new name to a remote file.
 - **size [remote_file]**: Print the size of a file.
+- **status**: Display the status of the FTP server.
 - **exit**: Exit the local shell.
 - **help**: Print this help message.
 
@@ -69,10 +70,11 @@ Passive mode is enabled
 Passive mode disabled
 ```
 
-- **New commands**
-        - chmod
-        - rename
-        - size
+- **New commands**  
+        - chmod  
+        - rename  
+        - size  
+        - status  
 
 ### Future Features
 - Ability to stop downloads and uploads without restarting
