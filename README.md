@@ -41,12 +41,32 @@ python3 PyFTPClient.py [IP] [port]
 - **Tab-completion**: The client supports tab-completion for commands and file/directory paths.
 - **Command History**: The client keeps track of previously executed commands and allows you to access them using the up and down arrow keys.
 
+## Updates: 🆕
+- Source command added, now is possible to display local cwd or remote cwd
+``` bash
+(server@192.168.1.1)-[~]: source 
+(server@192.168.1.1)-[~/projects/PyFTPClient]: 
+```
+- Progress bar added when download and upload files, also with file size and upload speed mesurements.
+
+``` bash
+(server@192.168.1.1)-[~/projects/PyFTPClient]: put PyFTPClient.py
+[==================================================] 100.00%  of 0.02 MB  [4.92 MB/s]         
+File 'PyFTPClient.py' uploaded to '/home/server' in 0.01 seconds
+```
+
+### Future Features
+- Ability to stop downloads and uploads without restarting
+- Tab update when working with directories
+
 ## Dependencies 🛠️
 This FTP client requires Python 3. The following libraries are used for various functionalities and are installed by default along with Python 3:
-- **ftplib**
 - **os**
 - **sys**
+ - **time**
+- **ftplib**
 - **getpass**
+- **readline**
 
 No additional installation is required for these libraries.
 
