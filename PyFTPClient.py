@@ -5,7 +5,7 @@ import getpass
 import readline
 
 
-version = "1.1"
+version = "1.2"
 url = "https://github.com/OBoladeras"
 
 RESET = '\x1b[0m'
@@ -26,8 +26,8 @@ ftpUsername = ""
 localDir = False
 cwd = os.getcwd()
 command_history = []
-commands = ['ls', 'cd', 'pwd', 'get', 'put', 'rm', 'mkdir',
-            'rmdir', 'open', 'history', 'local', 'whoami', 'help']
+commands = ['ls', 'cd', 'pwd', 'get', 'put', 'rm', 'mkdir', 'rmdir',
+            'open', 'history', 'local', 'whoami', 'source', 'help']
 
 
 def create_ftp_connection():
@@ -218,6 +218,23 @@ def handle_request(ftp, request):
 
         elif request[0] == 'help':
             print_help()
+
+        elif request[0] == 'source':
+            global localDir
+            if len(request) == 2:
+                if request[1] == 'local':
+                    localDir = True
+                elif request[1] in ['ftp', 'remote']:
+                    localDir = False
+                else:
+                    print(f"{YELLOW}Unknown command {RESET}'{GREEN}{request[1]}{RESET}'")
+            elif len(request) == 1:
+                if localDir:
+                    localDir = False
+                else:
+                    localDir = True
+            else:
+                print(f"{YELLOW}Unknown command {RESET}'{GREEN}{request[1]}{RESET}'")
 
         else:
             print(
@@ -438,6 +455,8 @@ def print_help():
     print(f"   {GREEN}open {RESET}[{CYAN}remote_file{RESET}]: Open and display the contents of a remote file.")
     print(f"   {GREEN}history{RESET}: Display the command history.")
     print(f"   {GREEN}whoami{RESET}: Print the username of the currently logged in user.")
+    print(f"   {GREEN}source{RESET} [{GREEN}local {RESET}/ {GREEN}remote{RESET}]: Change the directory showed in prompt.")
+    print(f"\t- Options are not required, by default will toggle between local and remote.")
     print(f"   {GREEN}help{RESET}: Print this help message.")
 
 

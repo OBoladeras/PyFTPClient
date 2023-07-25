@@ -4,7 +4,7 @@ This Python script provides a simple FTP client that allows you to connect to a 
 ## Usage 👨‍💻
 
 To run the FTP client, execute the script using Python with the following command:
-```
+``` bash
 python3 PyFTPClient.py [IP] [port]
 ```
 - **IP**: The IP address of the remote FTP server.
@@ -29,6 +29,8 @@ python3 PyFTPClient.py [IP] [port]
 - **open [remote_file]**: Open and display the contents of a remote file.
 - **history**: Display the command history.
 - **whoami**: Print the username of the currently logged-in user.
+- **source [local / remote]**: Change the directory showed in prompt.
+        - Options are not required, by default will toggle between local and remote.
 - **help**: Print this help message.
 
 ### Local Shell:
