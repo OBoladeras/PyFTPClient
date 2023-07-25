@@ -22,11 +22,12 @@ RESET_BOLD = '\x1b[22m'
 
 
 ftp = None
-ftpUsername = ""
+passive = True
 localDir = False
+ftpUsername = ""
 cwd = os.getcwd()
 command_history = []
-commands = ['ls', 'cd', 'pwd', 'get', 'put', 'rm', 'mkdir', 'rmdir',
+commands = ['ls', 'cd', 'pwd', 'get', 'put', 'rm', 'mkdir', 'rmdir', 'passive',
             'open', 'history', 'local', 'whoami', 'source', 'help']
 
 
@@ -64,6 +65,7 @@ def create_ftp_connection():
             ftp_password = getpass.getpass(prompt=f'Enter FTP password: ')
 
             ftp.login(ftpUsername, ftp_password)
+            ftp.set_pasv(passive)
             print(f'\n{GREEN}Logged in as {ftpUsername}{RESET}')
             break
 
@@ -100,6 +102,7 @@ def main():
                 f'{GREEN}({BOLD}{MAGENTA}{ftpUsername}@{IP}{GREEN}{RESET_BOLD})-[{WHITE}{directory}{GREEN}]: {RESET}')
 
             if request in ['exit', 'quit', 'close']:
+                print(f"\nSee you next time!")
                 ftp.quit()
                 break
             else:
@@ -236,6 +239,37 @@ def handle_request(ftp, request):
             else:
                 print(f"{YELLOW}Unknown command {RESET}'{GREEN}{request[1]}{RESET}'")
 
+        elif request[0] in ['passive', 'passive?']:
+            global passive
+            def check_passive():
+                if passive:
+                    print(f"Passive mode is {GREEN}enabled{RESET}")
+                else:
+                    print(f"Passive mode is {YELLOW}disabled{RESET}")
+            
+
+            if len(request) == 2:
+                if request[1] == '?':
+                    check_passive()
+            else:
+                if request[0] == 'passive?':
+                    check_passive()
+                else:
+                    if passive:
+                        try:
+                            passive = False
+                            ftp.set_pasv(passive)
+                            print(f"Passive mode {YELLOW}disabled{RESET}")
+                        except Exception as e:
+                            print(f"{RED}Error disabling passive mode: {RESET}{e}")
+                    else:
+                        try:
+                            passive = True
+                            ftp.set_pasv(passive)
+                            print(f"Passive mode {GREEN}enabled{RESET}")
+                        except Exception as e:
+                            print(f"{RED}Error entering passive mode: {RESET}{e}")
+
         else:
             print(
                 f"{YELLOW}Unknown command {RESET}'{GREEN}{request[0]}{RESET}'")
@@ -324,7 +358,7 @@ def change_directory(directory):
         os.chdir(dir_path)
         cwd = os.getcwd()
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"{RED}Error: {RESET}{e}")
 
 
 def get_remote_item_list_ftp(request):
@@ -491,7 +525,7 @@ def upload_file_to_ftp(request):
             upload_file_to_ftp(request)
 
     except FileNotFoundError:
-        print(f"Error: Local file '{local_file_path}' not found.")
+        print(f"{RED}Error: {RESET}Local file '{local_file_path}' not found.")
 
     except Exception as e:
         print(f"{RED}Error: {RESET}{e}")
@@ -547,6 +581,9 @@ def print_help():
     print(f"   {GREEN}whoami{RESET}: Print the username of the currently logged in user.")
     print(f"   {GREEN}source{RESET} [{GREEN}local {RESET}/ {GREEN}remote{RESET}]: Change the directory showed in prompt.")
     print(f"\t- Options are not required, by default will toggle between local and remote.")
+    print(f"   {GREEN}passive{RESET}[{GREEN}?{RESET}]: Switch between passive and active mode.")
+    print(f"\t- If `{GREEN}?{RESET}` is writed it will show the current mode (passive or active).")
+    print(f"   {GREEN}exit{RESET}: Exit the local shell.")
     print(f"   {GREEN}help{RESET}: Print this help message.")
 
 

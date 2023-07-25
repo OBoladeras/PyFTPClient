@@ -29,8 +29,11 @@ python3 PyFTPClient.py [IP] [port]
 - **open [remote_file]**: Open and display the contents of a remote file.
 - **history**: Display the command history.
 - **whoami**: Print the username of the currently logged-in user.
-- **source [local / remote]**: Change the directory showed in prompt.
+- **source [local / remote]**: Change the directory showed in prompt.  
         - Options are not required, by default will toggle between local and remote.
+- **passive{RESET}[?]**: Switch between passive and active mode.  
+        - If `?` is writed it will show the current mode (passive or active).
+- **exit**: Exit the local shell.
 - **help**: Print this help message.
 
 ### Local Shell:
@@ -53,6 +56,14 @@ python3 PyFTPClient.py [IP] [port]
 (server@192.168.1.1)-[~/projects/PyFTPClient]: put PyFTPClient.py
 [==================================================] 100.00%  of 0.02 MB  [4.92 MB/s]         
 File 'PyFTPClient.py' uploaded to '/home/server' in 0.01 seconds
+```
+
+- Ability to enter passive and active mode
+``` bash
+(server@192.168.1.1)-[~]: passive?
+Passive mode is enabled
+(server@192.168.1.1)-[~]: passive
+Passive mode disabled
 ```
 
 ### Future Features
