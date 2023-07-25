@@ -5,7 +5,7 @@ import ftplib
 import getpass
 import readline
 
-version = "1.3"
+version = "1.5"
 url = "https://github.com/OBoladeras"
 
 RESET = '\x1b[0m'
@@ -150,71 +150,78 @@ def handle_request(ftp, request):
                 print(line)
 
         elif request[0] == 'cd':
-            try:
-                directory = " ".join(request[1:])
-                ftp.cwd(directory)
+            if len(request) > 1:
+                try:
+                    directory = " ".join(request[1:])
+                    ftp.cwd(directory)
+                    print(f'Directory successfully changed')
+                except:
+                    print(f"{RED}Invalid directory{RESET}")
 
-                print(f'Directory successfully changed')
-            except:
-                print("{RED}Invalid directory{RESET}")
+            else:
+                print(f"{YELLOW}WARNING:{RESET} You must specify a directory")
 
         elif request[0] == 'pwd':
             directory = ftp.pwd()
-            print(f'Remote directory: {CYAN}{str(directory)}{RESET}\n')
+            print(f'Remote directory: `{CYAN}{str(directory)}{RESET}`')
 
         elif request[0] == 'get':
             if len(request) == 3:
-                get_file_from_ftp(request[1], request[2])
+                download_ftp(request[1], request[2])
             if len(request) == 2:
-                get_file_from_ftp(request[1], cwd)
+                download_ftp(request[1], cwd)
 
         elif request[0] == 'put':
-            upload_file_to_ftp(request)
+            upload_ftp(request)
 
         elif request[0] == 'rm':
             if len(request) >= 2:
                 file_path = " ".join(request[1:])
                 try:
                     ftp.delete(file_path)
-                    print(
-                        f"File '{CYAN}{file_path}{RESET}' removed from '{CYAN}{ftp.pwd()}{RESET}'")
+                    print(f"File `{CYAN}{file_path}{RESET}` removed")
 
                 except Exception as e:
                     print(f"{RED}Error: {RESET}{e}")
+            else:
+                print(f"{YELLOW}WARNING:{RESET} You must specify a file")
 
         elif request[0] == 'mkdir':
-            try:
-                ftp.mkd(request[1])
-                print(
-                    f"Directory '{CYAN}{request[1]}{RESET}' created in '{CYAN}{ftp.pwd()}{RESET}'")
-            except Exception as e:
-                print(f"{RED}Error while creating directory: {e}{RESET}")
+            if len(request) > 1:
+                try:
+                    directory = " ".join(request[1:])
+                    ftp.mkd(directory)
+                    print(f"Directory `{CYAN}{directory}{RESET}` created in `{CYAN}{ftp.pwd()}{RESET}`")
+                except Exception as e:
+                    print(f"{RED}Error while creating directory: {e}{RESET}")
+            else:
+                print(f"{YELLOW}WARNING:{RESET} You must specify a directory")
 
         elif request[0] == 'rmdir':
-            try:
-                ftp.rmd(request[1])
-                print(
-                    f"Directory '{CYAN}{request[1]}{RESET}' removed from '{CYAN}{ftp.pwd()}{RESET}'")
+            if len(request) > 1:
+                try:
+                    directory = " ".join(request[1:])
+                    ftp.rmd(directory)
+                    print(f"Directory `{CYAN}{directory}{RESET}` removed")
 
-            except Exception as e:
-                print(f"{RED}Error: {RESET}{e}")
+                except Exception as e:
+                    print(f"{RED}Error: {RESET}{e}")
+            else:
+                print(f"{YELLOW}WARNING:{RESET} You must specify a directory")
 
         elif request[0] == 'open':
-            path = " ".join(request[1:])
-            open_file_from_ftp(ftp, path)
+            if len(request) > 1:
+                try:
+                    path = " ".join(request[1:])
+                    open_file_from_ftp(ftp, path)
+                except Exception as e:
+                    print(f"{RED}Error: {RESET}{e}")
+            else:
+                print(f"{YELLOW}WARNING:{RESET} You must specify a file")
 
         elif request[0] == 'history':
             for command in command_history:
-
-                i = 0
-                for word in command.split():
-                    if word in commands and i == 0:
-                        print(f"{GREEN}{word}{RESET}", end=' ')
-                    elif '/' in word or '\\' in word:
-                        print(f"{CYAN}{word}{RESET}", end=' ')
-                    i += 1
-
-                print('')
+                print(command)
 
         elif request[0] == 'whoami':
             print(f"You logged in as {GREEN}{ftpUsername}{RESET}")
@@ -224,6 +231,7 @@ def handle_request(ftp, request):
 
         elif request[0] == 'source':
             global localDir
+
             if len(request) == 2:
                 if request[1] == 'local':
                     localDir = True
@@ -237,7 +245,7 @@ def handle_request(ftp, request):
                 else:
                     localDir = True
             else:
-                print(f"{YELLOW}Unknown command {RESET}'{GREEN}{request[1]}{RESET}'")
+                print(f"{YELLOW}WARNING{RESET} Need 1 or 0 arguments, got {len(request)}{RESET}")
 
         elif request[0] in ['passive', 'passive?']:
             global passive
@@ -274,7 +282,7 @@ def handle_request(ftp, request):
             if len(request) == 3:
                 try:
                     ftp.sendcmd(f"SITE CHMOD {request[1]} {request[2]}")
-                    print(f"File '{CYAN}{request[2]}{RESET}' permissions changed ({MAGENTA}{request[1]}{RESET})")
+                    print(f"File `{CYAN}{request[2]}{RESET}` permissions changed ({MAGENTA}{request[1]}{RESET})")
                 except Exception as e:
                     print(f"{RED}Error: {RESET}{e}")
             else:
@@ -284,7 +292,7 @@ def handle_request(ftp, request):
             if len(request) == 3:
                 try:
                     ftp.rename(request[1], request[2])
-                    print(f"Renamed `{CYAN}{request[1]}{RESET}` to `{CYAN}{request[2]}{RESET}")
+                    print(f"Renamed from `{CYAN}{request[1]}{RESET}` to `{CYAN}{request[2]}{RESET}`")
                 except Exception as e:
                     print(f"{RED}Error: {RESET}{e}")
             else:
@@ -297,34 +305,37 @@ def handle_request(ftp, request):
 
                     if size > 1048576:
                         size = round(size / 1048576, 2)
-                        print(f"File '{CYAN}{request[1]}{RESET}' size: {size} MB")
+                        print(f"File `{CYAN}{request[1]}{RESET}` size: {size} MB")
                     else:
-                        print(f"File '{CYAN}{request[1]}{RESET}' size: {size/1024:.2f} KB")
+                        print(f"File `{CYAN}{request[1]}{RESET}` size: {size/1024:.2f} KB")
                 except Exception as e:
                     print(f"{RED}Error: {RESET}{e}")
             else:
                 print(f"{YELLOW}WARNING{RESET} Need 2 arguments, got {len(request)}{RESET}")
 
         elif request[0] == 'status':
-            try:
-                status = ftp.sendcmd("STAT")
-                status = status.split("\n")
+            if len(request) == 1:
+                try:
+                    status = ftp.sendcmd("STAT")
+                    status = status.split("\n")
 
-                text = ""
-                i = 0
+                    text = ""
+                    i = 0
 
-                print(f"FTP Server status: {text}")
-                for line in status:
-                    if i != 0 and i != len(status) - 1:
-                        print(line)
-                    i += 1
+                    print(f"FTP Server status: {text}")
+                    for line in status:
+                        if i != 0 and i != len(status) - 1:
+                            print(line)
+                        i += 1
 
-            except Exception as e:
-                print(f"{RED}Error: {RESET}{e}")
-        
+                except Exception as e:
+                    print(f"{RED}Error: {RESET}{e}")
+            else:
+                print(f"{YELLOW}WARNING{RESET} Need 1 argument, got {len(request)}{RESET}")
+
         else:
             print(f"{YELLOW}Unknown command {RESET}'{GREEN}{request[0]}{RESET}'")
-            print(f"{YELLOW}Try 'help{RESET}' more information")
+            print(f"Try '{GREEN}help{RESET}' for more information")
 
 
 def completer(text, state):
@@ -427,11 +438,9 @@ def get_remote_item_list_ftp(request):
     if '-l' in request:
         ftp.retrlines('LIST', directory_listing.append)
         if '-f' in request:
-            listing = [name for name in directory_listing if ftp.nlst(
-                name.split(' ')[-1]) != [name]]
+            listing = [name for name in directory_listing if ftp.nlst(name.split(' ')[-1]) != [name]]
         elif '-d' in request:
-            listing = [name for name in directory_listing if ftp.nlst(
-                name.split(' ')[-1]) == [name]]
+            listing = [name for name in directory_listing if ftp.nlst(name.split(' ')[-1]) == [name]]
         else:
             listing = directory_listing
 
@@ -439,18 +448,16 @@ def get_remote_item_list_ftp(request):
         ftp.retrlines('NLST', directory_listing.append)
 
         if '-d' in request:
-            listing = [name for name in directory_listing if ftp.nlst(name) != [
-                name]]
+            listing = [name for name in directory_listing if ftp.nlst(name) != [name]]
         elif '-f' in request:
-            listing = [name for name in directory_listing if ftp.nlst(name) == [
-                name]]
+            listing = [name for name in directory_listing if ftp.nlst(name) == [name]]
         else:
             listing = directory_listing
 
     return listing
 
 
-def get_file_from_ftp(remote_file_path, local_file_path):
+def download_ftp(remote_file_path, local_file_path):
     try:
         total_size = ftp.size(remote_file_path)
         downloaded_size = 0
@@ -508,7 +515,7 @@ def get_file_from_ftp(remote_file_path, local_file_path):
             os.remove(local_file_path)
         else:
             print("Retrying...")
-            get_file_from_ftp(remote_file_path, local_file_path)
+            download_ftp(remote_file_path, local_file_path)
 
     except FileNotFoundError:
         print(
@@ -518,7 +525,7 @@ def get_file_from_ftp(remote_file_path, local_file_path):
         print(f"{RED}Error during download: {RESET}{e}")
 
 
-def upload_file_to_ftp(request):
+def upload_ftp(request):
     cwd = ftp.pwd()
 
     try:
@@ -574,7 +581,7 @@ def upload_file_to_ftp(request):
             ftp.delete(local_file_path)
         else:
             print("Retrying...")
-            upload_file_to_ftp(request)
+            upload_ftp(request)
 
     except FileNotFoundError:
         print(f"{RED}Error: {RESET}Local file '{local_file_path}' not found.")
