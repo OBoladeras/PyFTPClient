@@ -11,38 +11,46 @@ python3 PyFTPClient.py [IP] [port]
 - **port**: (Optional) The port number to connect to the FTP server. The default port is 21.
 
 ## Supported Commands ✅
-### FTP Commands:
-- **ls [-l] [-d] [-f]**: List files and directories in the remote FTP server.  
-        -l: Long format listing.  
-        -d: Show only directories.  
-        -f: Show only files.  
-        The combination of options is possible, e.g., -lf or -dl.
-- **cd [directory]**: Change the current remote FTP directory.
-- **pwd**: Print the current remote FTP directory.
-- **get [remote_file] [local_file]**: Download a file from the remote FTP server to the local machine.
-        If [local_file] is not specified, the file will be downloaded to the current local directory.
-- **put [local_file] [remote_directory]**: Upload a local file to the remote FTP server.
-        The file will be uploaded to the specified [remote_directory].
-- **rm [file_path]**: Remove a file from the remote FTP server.
-- **mkdir [directory]**: Create a directory on the remote FTP server.
-- **rmdir [directory]**: Remove a directory from the remote FTP server.
-- **open [remote_file]**: Open and display the contents of a remote file.
-- **history**: Display the command history.
-- **whoami**: Print the username of the currently logged-in user.
-- **source [local / remote]**: Change the directory showed in prompt.  
-        - Options are not required, by default will toggle between local and remote.
-- **passive[?]**: Switch between passive and active mode.  
-        - If `?` is writed it will show the current mode (passive or active).
-- **chmod [permission] [remote_file]**: Change the permissions of the remote file.
-- **rename [remote_file] [new_name]**: Set a new name to a remote file.
-- **size [remote_file]**: Print the size of a file.
-- **status**: Display the status of the FTP server.
-- **exit**: Exit the local shell.
-- **help**: Print this help message.
 
-### Local Shell:
-- **local [command]**: Run a local shell command and print the output.
-- **local cd [directory]**: Change the current local directory.
+- **File Operations 📂:**
+  - **ls**: List files and directories on the remote FTP server.
+  - **cd**: Change the current remote FTP directory.
+  - **pwd**: Print the current remote FTP directory.
+  - **get**: Download a file from the remote FTP server to the local machine.
+  - **put**: Upload a local file to the remote FTP server.
+  - **rm**: Remove a file from the remote FTP server.
+  - **mkdir**: Create a directory on the remote FTP server.
+  - **rmdir**: Remove a directory from the remote FTP server.
+
+- **FTP Transfer 📡:**
+  - **passive**: Switch between passive and active mode for FTP transfers.
+
+- **Permissions 🔒:**
+  - **chmod**: Change permission of a file on the remote FTP server.
+
+- **Renaming 🔧:**
+  - **rename**: Rename a file or directory on the remote FTP server.
+
+- **File Size 📏:**
+  - **size**: Retrieve the size of a file on the remote FTP server.
+
+- **Server Information ℹ️:**
+  - **status**: Get the status of the FTP server.
+
+- **File Display 📄:**
+  - **open**: Open and display the contents of a remote file.
+
+- **Other Commands 🛠️:**
+  - **history**: Display the command history.
+  - **local**: Run a local shell command and print the output.
+  - **whoami**: Print the username of the currently logged-in user.
+  - **source**: Change the directory shown in the prompt (local or remote).
+  - **help**: Print a help message.
+
+To see a list of all the suported commands a descriptiond and a usage help, use the following command:
+``` bash
+python3 PyFTPClient.py -h
+```
 
 ## Other Features: 🌟
 - **Tab-completion**: The client supports tab-completion for commands and file/directory paths.
