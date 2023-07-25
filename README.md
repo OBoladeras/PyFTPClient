@@ -31,8 +31,11 @@ python3 PyFTPClient.py [IP] [port]
 - **whoami**: Print the username of the currently logged-in user.
 - **source [local / remote]**: Change the directory showed in prompt.  
         - Options are not required, by default will toggle between local and remote.
-- **passive{RESET}[?]**: Switch between passive and active mode.  
+- **passive[?]**: Switch between passive and active mode.  
         - If `?` is writed it will show the current mode (passive or active).
+- **chmod [permission] [remote_file]**: Change the permissions of the remote file.
+- **rename [remote_file] [new_name]**: Set a new name to a remote file.
+- **size [remote_file]**: Print the size of a file.
 - **exit**: Exit the local shell.
 - **help**: Print this help message.
 
@@ -65,6 +68,11 @@ Passive mode is enabled
 (server@192.168.1.1)-[~]: passive
 Passive mode disabled
 ```
+
+- **New commands**
+        - chmod
+        - rename
+        - size
 
 ### Future Features
 - Ability to stop downloads and uploads without restarting

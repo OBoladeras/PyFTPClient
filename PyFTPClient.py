@@ -27,7 +27,7 @@ localDir = False
 ftpUsername = ""
 cwd = os.getcwd()
 command_history = []
-commands = ['ls', 'cd', 'pwd', 'get', 'put', 'rm', 'mkdir', 'rmdir', 'passive',
+commands = ['ls', 'cd', 'pwd', 'get', 'put', 'rm', 'mkdir', 'rmdir', 'passive', 'chmod', 'rename', 'size',
             'open', 'history', 'local', 'whoami', 'source', 'help']
 
 
@@ -270,9 +270,44 @@ def handle_request(ftp, request):
                         except Exception as e:
                             print(f"{RED}Error entering passive mode: {RESET}{e}")
 
+        elif request[0] == 'chmod':
+            if len(request) == 3:
+                try:
+                    ftp.sendcmd(f"SITE CHMOD {request[1]} {request[2]}")
+                    print(f"File '{CYAN}{request[2]}{RESET}' permissions changed ({MAGENTA}{request[1]}{RESET})")
+                except Exception as e:
+                    print(f"{RED}Error: {RESET}{e}")
+            else:
+                print(f"{YELLOW}WARNING{RESET} Need 3 arguments, got {len(request)}{RESET}")
+
+        elif request[0] == 'rename':
+            if len(request) == 3:
+                try:
+                    ftp.rename(request[1], request[2])
+                    print(f"Renamed `{CYAN}{request[1]}{RESET}` to `{CYAN}{request[2]}{RESET}")
+                except Exception as e:
+                    print(f"{RED}Error: {RESET}{e}")
+            else:
+                print(f"{YELLOW}WARNING{RESET} Need 3 arguments, got {len(request)}{RESET}")
+
+        elif request[0] == 'size':
+            if len(request) == 2:
+                try:
+                    size = ftp.size(request[1])
+
+                    if size > 1048576:
+                        size = round(size / 1048576, 2)
+                        print(f"File '{CYAN}{request[1]}{RESET}' size: {size} MB")
+                    else:
+                        print(f"File '{CYAN}{request[1]}{RESET}' size: {size/1024:.2f} KB")
+                except Exception as e:
+                    print(f"{RED}Error: {RESET}{e}")
+            else:
+                print(f"{YELLOW}WARNING{RESET} Need 2 arguments, got {len(request)}{RESET}")
+
         else:
-            print(
-                f"{YELLOW}Unknown command {RESET}'{GREEN}{request[0]}{RESET}'")
+            print(f"{YELLOW}Unknown command {RESET}'{GREEN}{request[0]}{RESET}'")
+            print(f"{YELLOW}Try 'help{RESET}' more information")
 
 
 def completer(text, state):
@@ -583,6 +618,10 @@ def print_help():
     print(f"\t- Options are not required, by default will toggle between local and remote.")
     print(f"   {GREEN}passive{RESET}[{GREEN}?{RESET}]: Switch between passive and active mode.")
     print(f"\t- If `{GREEN}?{RESET}` is writed it will show the current mode (passive or active).")
+    print(f"   {GREEN}chmod{RESET} [{GREEN}option{RESET}] [{CYAN}remote_file{RESET}]: Change permission of a file.")
+    print(f"\t- Option is the permission level: ({GREEN}+x{RESET}) or ({GREEN}700{RESET}).")
+    print(f"   {GREEN}rename{RESET} [{CYAN}remote_file{RESET}] [{CYAN}new_name{RESET}]: Rename a file.")
+    print(f"   {GREEN}size{RESET} [{CYAN}remote_file{RESET}]: Print the size of a file.")
     print(f"   {GREEN}exit{RESET}: Exit the local shell.")
     print(f"   {GREEN}help{RESET}: Print this help message.")
 
